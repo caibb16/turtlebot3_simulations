@@ -143,22 +143,17 @@ colcon build --symlink-install
 ```bash
 # 重要：必须先source Gazebo环境变量（设置插件路径等）
 source /usr/share/gazebo/setup.sh
-
 # 再source ROS 2环境
 source install/setup.bash
+
+
+# 自动加载方案，无需每次source
+# 把这行添加到 ~/.bashrc 的末尾
+echo 'source /usr/share/gazebo/setup.sh && source ~/colcon_ws/install/setup.bash' >> ~/.bashrc
+# 重新加载配置
+source ~/.bashrc
 ```
 
-**为什么需要source gazebo setup？**
-- 设置 `GAZEBO_PLUGIN_PATH` - Gazebo插件搜索路径
-- 设置 `GAZEBO_MODEL_PATH` - 模型搜索路径
-- 设置 `LD_LIBRARY_PATH` - 动态库搜索路径
-- 设置 `GAZEBO_RESOURCE_PATH` - 资源文件路径
-
-**没有这些设置会导致：**
-- gzserver启动失败
-- 插件无法加载（包括gazebo_ros_factory）
-- spawn_entity服务不可用
-- 模型和资源加载失败
 
 ### 设置TurtleBot3机器人型号
 ```bash
