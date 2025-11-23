@@ -141,8 +141,24 @@ colcon build --symlink-install
 
 #### 5. 配置环境
 ```bash
+# 重要：必须先source Gazebo环境变量（设置插件路径等）
+source /usr/share/gazebo/setup.sh
+
+# 再source ROS 2环境
 source install/setup.bash
 ```
+
+**为什么需要source gazebo setup？**
+- 设置 `GAZEBO_PLUGIN_PATH` - Gazebo插件搜索路径
+- 设置 `GAZEBO_MODEL_PATH` - 模型搜索路径
+- 设置 `LD_LIBRARY_PATH` - 动态库搜索路径
+- 设置 `GAZEBO_RESOURCE_PATH` - 资源文件路径
+
+**没有这些设置会导致：**
+- gzserver启动失败
+- 插件无法加载（包括gazebo_ros_factory）
+- spawn_entity服务不可用
+- 模型和资源加载失败
 
 ### 设置TurtleBot3机器人型号
 ```bash
@@ -342,6 +358,38 @@ URDF（统一机器人描述格式）文件定义了：
 
 ## 调试与故障排除
 
+### 0. spawn_entity服务不可用
+**问题**: 
+```
+[spawn_entity.py-4] [ERROR]: Service /spawn_entity unavailable. 
+Was Gazebo started with GazeboRosFactory?
+```
+
+**原因**:
+- 未source `/usr/share/gazebo/setup.sh`，导致插件路径不正确
+- 或gzserver进程异常退出，gazebo_ros_factory插件未初始化
+
+**解决方案**:
+```bash
+# 确保按顺序执行
+source /usr/share/gazebo/setup.sh      # 必须先执行
+source ~/colcon_ws/install/setup.bash
+export TURTLEBOT3_MODEL=burger
+
+# 验证环境变量已设置
+echo $GAZEBO_PLUGIN_PATH
+echo $GAZEBO_MODEL_PATH
+
+# 重新启动
+ros2 launch turtlebot3_gazebo empty_world.launch.py
+```
+
+**如果仍然失败**：
+- 使用虚拟节点代替（无需Gazebo）：
+  ```bash
+  ros2 launch turtlebot3_fake_node turtlebot3_fake_node.launch.py
+  ```
+
 ### 1. 模型加载失败
 **问题**: Gazebo无法加载模型
 **解决方案**:
@@ -446,6 +494,16 @@ ros2 service call /unpause_physics std_srvs/Empty
 ---
 
 ## 常见问题（FAQ）
+
+**Q: 为什么一定要source /usr/share/gazebo/setup.sh？**
+A: 这个脚本设置了Gazebo运行所需的关键环境变量（插件路径、模型路径、库路径等）。如果不source，Gazebo将找不到插件和资源，导致启动失败或spawn_entity服务不可用。
+
+**Q: source的顺序很重要吗？**
+A: 是的！必须先source gazebo setup，再source ROS 2 setup。顺序是：
+```bash
+source /usr/share/gazebo/setup.sh    # 第一步
+source ~/colcon_ws/install/setup.bash # 第二步
+```
 
 **Q: 我应该使用哪个分支？**
 A: 如果使用ROS 2 Humble，选择`humble`分支；如果使用ROS 2 Noetic，选择`noetic`分支。`main`分支是最新开发版本。
